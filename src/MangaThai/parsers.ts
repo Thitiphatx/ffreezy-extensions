@@ -1,4 +1,3 @@
-import type { CheerioAPI } from "cheerio";
 import {
   type Chapter,
   type ChapterDetails,
@@ -7,16 +6,28 @@ import {
   type SourceManga,
 } from "@paperback/types";
 import { ContentRating } from "@paperback/types";
+import type { CheerioAPI } from "cheerio";
 import * as entities from "entities";
 
 export class MangaThaiParser {
   parseMangaDetails($: CheerioAPI, mangaId: string): SourceManga {
     const title = entities.decodeHTML($("#thisPostname").first().text().trim());
-    let image = $("#img-pc > div.aniframe > img.img-responsive").attr("src") ?? "https://i.imgur.com/GYUxEX8.png";
+    let image =
+      $("#img-pc > div.aniframe > img.img-responsive").attr("src") ??
+      "https://i.imgur.com/GYUxEX8.png";
 
-    const description = entities.decodeHTML($("body > div.container > div.panel.panel-info > div.panel-body > div > div.col-lg-9.col-sm-8.col-xs-12 > div > div > p").text().trim() ?? "");
+    const description = entities.decodeHTML(
+      $(
+        "body > div.container > div.panel.panel-info > div.panel-body > div > div.col-lg-9.col-sm-8.col-xs-12 > div > div > p",
+      )
+        .text()
+        .trim() ?? "",
+    );
 
-    const rawStatus = $("div.container > div.panel.panel-info > div.panel-body > div > div.col-lg-9.col-sm-8.col-xs-12 > p:nth-child(2) > span").text() ?? "";
+    const rawStatus =
+      $(
+        "div.container > div.panel.panel-info > div.panel-body > div > div.col-lg-9.col-sm-8.col-xs-12 > p:nth-child(2) > span",
+      ).text() ?? "";
     const status = rawStatus === "จบ" ? "COMPLETED" : "ONGOING";
 
     return {
@@ -37,9 +48,16 @@ export class MangaThaiParser {
     const chapters: Chapter[] = [];
     let i = 0;
 
-    for (const chapter of $("tr", "body > div.container > div.table-responsive > table > tbody").toArray()) {
+    for (const chapter of $(
+      "tr",
+      "body > div.container > div.table-responsive > table > tbody",
+    ).toArray()) {
       i++;
-      const titleText = $("td.chapter-name > a", chapter).text().trim().replace(/[^\d.-]/g, "") ?? "";
+      const titleText =
+        $("td.chapter-name > a", chapter)
+          .text()
+          .trim()
+          .replace(/[^\d.-]/g, "") ?? "";
       const chapterId = $("td.chapter-name > a", chapter).attr("href")?.split("/")[4] ?? "";
 
       if (!chapterId) continue;
@@ -52,7 +70,16 @@ export class MangaThaiParser {
 
       chapters.push({
         chapterId,
-        sourceManga: { mangaId, mangaInfo: { primaryTitle: "", secondaryTitles: [], synopsis: "", contentRating: ContentRating.MATURE, thumbnailUrl: "" } },
+        sourceManga: {
+          mangaId,
+          mangaInfo: {
+            primaryTitle: "",
+            secondaryTitles: [],
+            synopsis: "",
+            contentRating: ContentRating.MATURE,
+            thumbnailUrl: "",
+          },
+        },
         title: entities.decodeHTML(`ตอนที่. ${titleText}`),
         langCode: "th",
         chapNum: isNaN(chapNum) ? i : chapNum,
@@ -83,14 +110,22 @@ export class MangaThaiParser {
   parseHomeSections($: CheerioAPI): DiscoverSectionItem[] {
     const items: DiscoverSectionItem[] = [];
 
-    for (const comic of $("div.col-lg-3.col-md-3.col-sm-4.col-smx-4.col-xs-6 > div.aniframe", "div.container").toArray()) {
+    for (const comic of $(
+      "div.col-lg-3.col-md-3.col-sm-4.col-smx-4.col-xs-6 > div.aniframe",
+      "div.container",
+    ).toArray()) {
       let image = encodeURI($("a:nth-child(2) > img", comic).first().attr("src") ?? "") ?? "";
 
       const title = $("a.manga-title", comic).first().text().trim() ?? "";
       const id = $("a.manga-title", comic).attr("href")?.split("/")[3] ?? "";
-      const sub = $("span.label-update.label.label-default.label-ago", comic).first().text().trim().split(" ") ?? [];
+      const sub =
+        $("span.label-update.label.label-default.label-ago", comic)
+          .first()
+          .text()
+          .trim()
+          .split(" ") ?? [];
       const subtitle = sub.length >= 3 ? `${sub[0]} ${sub[1]}${sub[2]}` : "";
-      
+
       if (!id || !title) continue;
 
       items.push({
@@ -109,12 +144,20 @@ export class MangaThaiParser {
     const comics: SearchResultItem[] = [];
     const collectedIds: string[] = [];
 
-    for (const item of $("div.col-lg-3.col-md-3.col-sm-4.col-smx-4.col-xs-6 > div.aniframe", "div.container").toArray()) {
+    for (const item of $(
+      "div.col-lg-3.col-md-3.col-sm-4.col-smx-4.col-xs-6 > div.aniframe",
+      "div.container",
+    ).toArray()) {
       let image = encodeURI($("a:nth-child(2) > img", item).first().attr("src") ?? "") ?? "";
 
       const title = $("a.manga-title", item).first().text().trim() ?? "";
       const id = $("a.manga-title", item).attr("href")?.split("/")[3] ?? "";
-      const sub = $("span.label-update.label.label-default.label-ago", item).first().text().trim().split(" ") ?? [];
+      const sub =
+        $("span.label-update.label.label-default.label-ago", item)
+          .first()
+          .text()
+          .trim()
+          .split(" ") ?? [];
       const subtitle = sub.length >= 3 ? `${sub[0]} ${sub[1]}${sub[2]}` : "";
 
       if (!id || !title) continue;
@@ -138,7 +181,10 @@ export class MangaThaiParser {
   isLastPage($: CheerioAPI): boolean {
     let isLast = false;
     const pages: number[] = [];
-    for (const page of $("li a", "body > div:nth-child(4) > center > ul.pagination.pagination-lg").toArray()) {
+    for (const page of $(
+      "li a",
+      "body > div:nth-child(4) > center > ul.pagination.pagination-lg",
+    ).toArray()) {
       const p = Number($(page).text().trim());
       if (isNaN(p)) continue;
       pages.push(p);

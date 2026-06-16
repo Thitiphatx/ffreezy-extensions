@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 import {
-  URL,
+  DiscoverSectionType,
   type Chapter,
   type ChapterDetails,
   type DiscoverSection,
@@ -12,7 +12,6 @@ import {
   type SearchResultItem,
   type SortingOption,
   type SourceManga,
-  DiscoverSectionType,
 } from "@paperback/types";
 
 import type { ChapterImage, HomeData, MangaDetails, SearchData } from "./models";
@@ -60,8 +59,8 @@ export class NekopostExtension implements ExtensionImpl<typeof NekopostConfig> {
 
   async getSearchResults(
     query: SearchQuery<any>,
-    metadata: { page?: number } | undefined,
-    sortingOption: SortingOption | undefined,
+    _metadata: { page?: number } | undefined,
+    _sortingOption: SortingOption | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
     let url = "";
     let dataObj: unknown = undefined;
@@ -113,7 +112,7 @@ export class NekopostExtension implements ExtensionImpl<typeof NekopostConfig> {
     };
   }
 
-  async getChapters(sourceManga: SourceManga, sinceDate?: Date): Promise<Chapter[]> {
+  async getChapters(sourceManga: SourceManga, _sinceDate?: Date): Promise<Chapter[]> {
     const [, buffer] = await Application.scheduleRequest({
       url: `https://api.osemocphoto.com/frontAPI/getProjectInfo/${sourceManga.mangaId}`,
       method: "GET",

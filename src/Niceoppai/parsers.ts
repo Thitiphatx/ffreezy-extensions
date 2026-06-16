@@ -1,4 +1,3 @@
-import type { CheerioAPI } from "cheerio";
 import {
   type Chapter,
   type ChapterDetails,
@@ -8,6 +7,7 @@ import {
   type Tag,
 } from "@paperback/types";
 import { ContentRating } from "@paperback/types";
+import type { CheerioAPI } from "cheerio";
 import * as entities from "entities";
 
 export class NiceoppaiParser {
@@ -21,7 +21,10 @@ export class NiceoppaiParser {
     const description = entities.decodeHTML($("div.det > p:nth-child(3)").text().trim() ?? "");
 
     const arrayTags: Tag[] = [];
-    for (const tag of $("a", "#sct_content > div > div.wpm_pag.mng_det > div.mng_ifo > div.det > p:nth-child(9)").toArray()) {
+    for (const tag of $(
+      "a",
+      "#sct_content > div > div.wpm_pag.mng_det > div.mng_ifo > div.det > p:nth-child(9)",
+    ).toArray()) {
       const label = $(tag).text().trim();
       const id = encodeURI($(tag).attr("href")?.split("/")[5] ?? "");
 
@@ -69,7 +72,16 @@ export class NiceoppaiParser {
 
       chapters.push({
         chapterId,
-        sourceManga: { mangaId, mangaInfo: { primaryTitle: "", secondaryTitles: [], synopsis: "", contentRating: ContentRating.MATURE, thumbnailUrl: "" } },
+        sourceManga: {
+          mangaId,
+          mangaInfo: {
+            primaryTitle: "",
+            secondaryTitles: [],
+            synopsis: "",
+            contentRating: ContentRating.MATURE,
+            thumbnailUrl: "",
+          },
+        },
         title: entities.decodeHTML(title),
         langCode: "th",
         chapNum: isNaN(chapNum) ? i : chapNum,
@@ -100,16 +112,20 @@ export class NiceoppaiParser {
   parseHomeSections($: CheerioAPI): DiscoverSectionItem[] {
     const items: DiscoverSectionItem[] = [];
 
-    for (const manga of $("div.row", "#sct_content div.con div.wpm_pag.mng_lts_chp.grp").toArray()) {
+    for (const manga of $(
+      "div.row",
+      "#sct_content div.con div.wpm_pag.mng_lts_chp.grp",
+    ).toArray()) {
       const id = $("div.det > a.ttl", manga).attr("href")?.split("/")[3] ?? "";
       let image = $("div.cvr > div.img_wrp > a > img", manga).first().attr("src") ?? "";
       image = encodeURI(image.replace("36x0", "350x0"));
-      
+
       const title = $("div.det > a", manga).text().trim() ?? "";
-      const subtitle = $("ul.lst > li:nth-child(1) > a.lst > b.val.lng_", manga).text().trim() ?? "";
-      
+      const subtitle =
+        $("ul.lst > li:nth-child(1) > a.lst > b.val.lng_", manga).text().trim() ?? "";
+
       if (!id || !title) continue;
-      
+
       items.push({
         type: "simpleCarouselItem",
         mangaId: id,
@@ -126,13 +142,16 @@ export class NiceoppaiParser {
     const comics: SearchResultItem[] = [];
     const collectedIds: string[] = [];
 
-    for (const manga of $("#sct_content > div.con > div.wpm_pag.mng_lts_chp.grp > div.row").toArray()) {
+    for (const manga of $(
+      "#sct_content > div.con > div.wpm_pag.mng_lts_chp.grp > div.row",
+    ).toArray()) {
       const id = $("div.det > a", manga).attr("href")?.split("/")[3] ?? "";
       let image = $("div.cvr > div.img_wrp > a > img", manga).first().attr("src") ?? "";
       image = encodeURI(image.replace("36x0", "350x0"));
 
       const title = $("div.det > a", manga).text().trim() ?? "";
-      const subtitle = $("div.det > ul.lst > li:nth-child(1) > a.lst > b.val.lng_", manga).text().trim() ?? "";
+      const subtitle =
+        $("div.det > ul.lst > li:nth-child(1) > a.lst > b.val.lng_", manga).text().trim() ?? "";
 
       if (!id || !title) continue;
       if (collectedIds.includes(id)) continue;
@@ -156,10 +175,10 @@ export class NiceoppaiParser {
       const id = $("div.det > a", manga).attr("href")?.split("/")[3] ?? "";
       let image = $("div.cvr > div.img_wrp > a > img", manga).first().attr("src") ?? "";
       image = encodeURI(image.replace("36x0", "350x0"));
-      
+
       const title = $("div.det > a", manga).text().trim() ?? "";
       const subtitle = $("div.det > div.vws", manga).text().trim() ?? "";
-      
+
       if (!id || !title || !image) continue;
       if (collectedIds.includes(id)) continue;
 

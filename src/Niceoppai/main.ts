@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 import {
-  URL,
+  DiscoverSectionType,
   type Chapter,
   type ChapterDetails,
   type DiscoverSection,
@@ -12,7 +12,6 @@ import {
   type SearchResultItem,
   type SortingOption,
   type SourceManga,
-  DiscoverSectionType,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 
@@ -20,7 +19,8 @@ import { NiceoppaiParser } from "./parsers";
 import type NiceoppaiConfig from "./pbconfig";
 
 const DOMAIN = "https://www.niceoppai.net";
-const USER_AGENT = "Mozilla / 5.0 (compatible; MSIE 7.0; Windows; U; Windows NT 6.0; Win64; x64 Trident / 4.0)";
+const USER_AGENT =
+  "Mozilla / 5.0 (compatible; MSIE 7.0; Windows; U; Windows NT 6.0; Win64; x64 Trident / 4.0)";
 
 export class NiceoppaiExtension implements ExtensionImpl<typeof NiceoppaiConfig> {
   parser = new NiceoppaiParser();
@@ -64,15 +64,15 @@ export class NiceoppaiExtension implements ExtensionImpl<typeof NiceoppaiConfig>
 
   async getSearchResults(
     query: SearchQuery<any>,
-    metadata: { page?: number } | undefined,
-    sortingOption: SortingOption | undefined,
+    _metadata: { page?: number } | undefined,
+    _sortingOption: SortingOption | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
     let param = "";
     if (query.title) {
       param = `search/${encodeURIComponent(query.title)}`;
     } else {
       // In old code: category/${query?.includedTags[0]}
-      param = "search/"; 
+      param = "search/";
     }
 
     const [, buffer] = await Application.scheduleRequest({
@@ -107,7 +107,7 @@ export class NiceoppaiExtension implements ExtensionImpl<typeof NiceoppaiConfig>
     };
   }
 
-  async getChapters(sourceManga: SourceManga, sinceDate?: Date): Promise<Chapter[]> {
+  async getChapters(sourceManga: SourceManga, _sinceDate?: Date): Promise<Chapter[]> {
     const [, buffer] = await Application.scheduleRequest({
       url: `${DOMAIN}/${sourceManga.mangaId}`,
       method: "GET",

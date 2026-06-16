@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 import {
-  URL,
+  DiscoverSectionType,
   type Chapter,
   type ChapterDetails,
   type DiscoverSection,
@@ -12,7 +12,6 @@ import {
   type SearchResultItem,
   type SortingOption,
   type SourceManga,
-  DiscoverSectionType,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 
@@ -49,7 +48,7 @@ export class Manga168Extension implements ExtensionImpl<typeof Manga168Config> {
       });
       const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
       const items = this.parser.parseHomeSections($);
-      
+
       const isLast = this.parser.isLastPage($);
 
       return {
@@ -64,7 +63,7 @@ export class Manga168Extension implements ExtensionImpl<typeof Manga168Config> {
   async getSearchResults(
     query: SearchQuery<any>,
     metadata: { page?: number } | undefined,
-    sortingOption: SortingOption | undefined,
+    _sortingOption: SortingOption | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
     const page = metadata?.page ?? 1;
     let url = DOMAIN;
@@ -105,7 +104,7 @@ export class Manga168Extension implements ExtensionImpl<typeof Manga168Config> {
     };
   }
 
-  async getChapters(sourceManga: SourceManga, sinceDate?: Date): Promise<Chapter[]> {
+  async getChapters(sourceManga: SourceManga, _sinceDate?: Date): Promise<Chapter[]> {
     const [, buffer] = await Application.scheduleRequest({
       url: `${DOMAIN}/manga/${sourceManga.mangaId}/`,
       method: "GET",

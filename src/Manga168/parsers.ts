@@ -1,30 +1,40 @@
-import type { CheerioAPI } from "cheerio";
 import {
-  DiscoverSectionType,
+  ContentRating,
   type Chapter,
   type ChapterDetails,
-  type DiscoverSection,
   type DiscoverSectionItem,
   type SearchResultItem,
   type SourceManga,
 } from "@paperback/types";
-import { ContentRating } from "@paperback/types";
+import type { CheerioAPI } from "cheerio";
 import * as entities from "entities";
-
-const DOMAIN = "https://manga168.com";
 
 export class Manga168Parser {
   parseMangaDetails($: CheerioAPI, mangaId: string): SourceManga {
     const titles: string[] = [];
-    for (const title of $("div.seriestucon > div.seriestuheader > div.seriestualt").text().trim().split(", ")) {
+    for (const title of $("div.seriestucon > div.seriestuheader > div.seriestualt")
+      .text()
+      .trim()
+      .split(", ")) {
       titles.push(entities.decodeHTML(title));
     }
 
-    let image = $("div.seriestucon > div.seriestucontent > div.seriestucontl > div.thumb > img").attr("src") ?? "https://i.imgur.com/GYUxEX8.png";
+    let image =
+      $("div.seriestucon > div.seriestucontent > div.seriestucontl > div.thumb > img").attr(
+        "src",
+      ) ?? "https://i.imgur.com/GYUxEX8.png";
     image = encodeURI(image);
 
-    const description = entities.decodeHTML($("div.seriestucon > div.seriestucontent > div.seriestucontentr > div.seriestuhead > div.entry-content.entry-content-single > p:nth-child(1)").text().trim() ?? "");
-    const infomation = $("div.seriestucon > div.seriestucontent > div.seriestucontentr > div.seriestucont > div.seriestucontr > table.infotable > tbody").text();
+    const description = entities.decodeHTML(
+      $(
+        "div.seriestucon > div.seriestucontent > div.seriestucontentr > div.seriestuhead > div.entry-content.entry-content-single > p:nth-child(1)",
+      )
+        .text()
+        .trim() ?? "",
+    );
+    const infomation = $(
+      "div.seriestucon > div.seriestucontent > div.seriestucontentr > div.seriestucont > div.seriestucontr > table.infotable > tbody",
+    ).text();
 
     const author = this.parseInfo(infomation, "Author");
     const artist = this.parseInfo(infomation, "Artist");
@@ -32,7 +42,10 @@ export class Manga168Parser {
     const status = rawStatus === "Ongoing" ? "ONGOING" : "COMPLETED";
 
     const arrayTags: string[] = [];
-    for (const tag of $("a", "div.seriestucon > div.seriestucontent > div.seriestucontentr > div.seriestucont > div.seriestucontr > div.seriestugenre").toArray()) {
+    for (const tag of $(
+      "a",
+      "div.seriestucon > div.seriestucontent > div.seriestucontentr > div.seriestucont > div.seriestucontr > div.seriestugenre",
+    ).toArray()) {
       const label = $(tag).text().trim();
       if (!label) continue;
       arrayTags.push(label);
@@ -50,7 +63,10 @@ export class Manga168Parser {
         status: status,
         contentRating: ContentRating.EVERYONE,
         rating: 0,
-        tagGroups: arrayTags.length > 0 ? [{ id: "genres", title: "Genres", tags: arrayTags.map(x => ({ id: x, title: x })) }] : [],
+        tagGroups:
+          arrayTags.length > 0
+            ? [{ id: "genres", title: "Genres", tags: arrayTags.map((x) => ({ id: x, title: x })) }]
+            : [],
       },
     };
   }
@@ -75,16 +91,25 @@ export class Manga168Parser {
 
       chapters.push({
         chapterId,
-        sourceManga: { mangaId, mangaInfo: { primaryTitle: "", secondaryTitles: [], synopsis: "", contentRating: ContentRating.EVERYONE, thumbnailUrl: "" } },
+        sourceManga: {
+          mangaId,
+          mangaInfo: {
+            primaryTitle: "",
+            secondaryTitles: [],
+            synopsis: "",
+            contentRating: ContentRating.EVERYONE,
+            thumbnailUrl: "",
+          },
+        },
         title: entities.decodeHTML(`ตอนที่. ${title}`),
         langCode: "th",
         chapNum: isNaN(chapNum) ? i : chapNum,
         publishDate: date,
       });
 
-      i--; // Wait, the original had i++ then i-- which keeps i at 1 basically? 
+      i--; // Wait, the original had i++ then i-- which keeps i at 1 basically?
       // I will just use a decreasing/increasing logic properly or leave it since it's an old bug/feature.
-      // Wait, in original: i++ then push then i--, so chapNum is always 1 if isNaN? 
+      // Wait, in original: i++ then push then i--, so chapNum is always 1 if isNaN?
       // Actually, since we parse chapters, maybe we don't need accurate fallback chapNum.
     }
     return chapters;
@@ -108,12 +133,15 @@ export class Manga168Parser {
   parseHomeSections($: CheerioAPI): DiscoverSectionItem[] {
     const items: DiscoverSectionItem[] = [];
 
-    for (const comic of $("div.utao.styletwo > div.uta", "#content > div.wrapper > div.postbody > div.bixbox > div.listupd").toArray()) {
+    for (const comic of $(
+      "div.utao.styletwo > div.uta",
+      "#content > div.wrapper > div.postbody > div.bixbox > div.listupd",
+    ).toArray()) {
       let image = $("div.imgu > a.series > img", comic).first().attr("src") ?? "";
       const title = $("div.luf > a.series", comic).first().attr("title") ?? "";
       const id = $("div.luf > a.series", comic).attr("href")?.split("/")[4] ?? "";
       const subtitle = $("div.luf > ul > li:nth-child(1) > a", comic).text() ?? "";
-      
+
       if (!id || !title) continue;
 
       items.push({
@@ -132,12 +160,20 @@ export class Manga168Parser {
     const comics: SearchResultItem[] = [];
     const collectedIds: string[] = [];
 
-    for (const item of $("div.col-lg-3.col-md-3.col-sm-4.col-smx-4.col-xs-6 > div.aniframe", "div.container").toArray()) {
+    for (const item of $(
+      "div.col-lg-3.col-md-3.col-sm-4.col-smx-4.col-xs-6 > div.aniframe",
+      "div.container",
+    ).toArray()) {
       let image = encodeURI($("a:nth-child(2) > img", item).first().attr("src") ?? "") ?? "";
 
       const title = $("a.manga-title", item).first().text().trim() ?? "";
       const id = $("a.manga-title", item).attr("href")?.split("/")[3] ?? "";
-      const sub = $("span.label-update.label.label-default.label-ago", item).first().text().trim().split(" ") ?? [];
+      const sub =
+        $("span.label-update.label.label-default.label-ago", item)
+          .first()
+          .text()
+          .trim()
+          .split(" ") ?? [];
       const subtitle = sub.length >= 3 ? `${sub[0]} ${sub[1]}${sub[2]}` : "";
 
       if (!id || !title) continue;
@@ -158,12 +194,17 @@ export class Manga168Parser {
     const mangaItems: SearchResultItem[] = [];
     const collectedIds: string[] = [];
 
-    for (const manga of $("div.bs", "#content > div.wrapper > div.postbody > div.bixbox > div.listupd").toArray()) {
-      let image = encodeURI($("div.bsx > a > div.limit > img", manga).first().attr("src") ?? "") ?? "";
+    for (const manga of $(
+      "div.bs",
+      "#content > div.wrapper > div.postbody > div.bixbox > div.listupd",
+    ).toArray()) {
+      let image =
+        encodeURI($("div.bsx > a > div.limit > img", manga).first().attr("src") ?? "") ?? "";
 
       const title = $("div.bsx > a > div.bigor > div.tt", manga).first().text().trim() ?? "";
       const id = $("div.bsx > a", manga).attr("href")?.split("/")[4] ?? "";
-      const subtitle = $("div.bsx > a > div.bigor > div.adds > div.epxs", manga).first().text().trim() ?? "";
+      const subtitle =
+        $("div.bsx > a > div.bigor > div.adds > div.epxs", manga).first().text().trim() ?? "";
 
       if (!id || !title || !image) continue;
       if (collectedIds.includes(id)) continue;
@@ -182,13 +223,20 @@ export class Manga168Parser {
   isLastPage($: CheerioAPI): boolean {
     let isLast = false;
     const pages: number[] = [];
-    for (const page of $("a.page-numbers", "#content > div.wrapper > div.postbody > div.bixbox > div.listupd > div.pagination").toArray()) {
+    for (const page of $(
+      "a.page-numbers",
+      "#content > div.wrapper > div.postbody > div.bixbox > div.listupd > div.pagination",
+    ).toArray()) {
       const p = Number($(page).text().trim());
       if (isNaN(p)) continue;
       pages.push(p);
     }
     const lastPage = Math.max(...pages, 1);
-    const currentPageStr = $("#content > div.wrapper > div.postbody > div.bixbox > div.listupd > div.pagination > span").text().trim();
+    const currentPageStr = $(
+      "#content > div.wrapper > div.postbody > div.bixbox > div.listupd > div.pagination > span",
+    )
+      .text()
+      .trim();
     const currentPage = Number(currentPageStr);
     if (currentPage >= lastPage) isLast = true;
     return isLast;
@@ -198,7 +246,11 @@ export class Manga168Parser {
     let data = "";
     const index = info.indexOf(label);
     if (index !== -1) {
-      data = info.substring(index + label.length).trim().split("\n")[0] ?? "";
+      data =
+        info
+          .substring(index + label.length)
+          .trim()
+          .split("\n")[0] ?? "";
     }
     return data;
   }

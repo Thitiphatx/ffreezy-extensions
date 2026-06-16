@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 import {
-  URL,
+  DiscoverSectionType,
   type Chapter,
   type ChapterDetails,
   type DiscoverSection,
@@ -12,7 +12,6 @@ import {
   type SearchResultItem,
   type SortingOption,
   type SourceManga,
-  DiscoverSectionType,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 
@@ -84,11 +83,9 @@ export class MikudoujinExtension implements ExtensionImpl<typeof MikudoujinConfi
 
   async getSearchResults(
     query: SearchQuery<any>,
-    metadata: { page?: number } | undefined,
-    sortingOption: SortingOption | undefined,
+    _metadata: { page?: number } | undefined,
+    _sortingOption: SortingOption | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
-    const page = metadata?.page ?? 1;
-
     if (query.title) {
       const [, buffer] = await Application.scheduleRequest({
         url: encodeURI(query.title),
@@ -122,7 +119,7 @@ export class MikudoujinExtension implements ExtensionImpl<typeof MikudoujinConfi
     };
   }
 
-  async getChapters(sourceManga: SourceManga, sinceDate?: Date): Promise<Chapter[]> {
+  async getChapters(sourceManga: SourceManga, _sinceDate?: Date): Promise<Chapter[]> {
     const [, buffer] = await Application.scheduleRequest({
       url: `${DOMAIN}/${sourceManga.mangaId}/`,
       method: "GET",
@@ -132,9 +129,10 @@ export class MikudoujinExtension implements ExtensionImpl<typeof MikudoujinConfi
   }
 
   async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
-    const url = chapter.chapterId !== "null"
-      ? `${DOMAIN}/${chapter.sourceManga.mangaId}/${chapter.chapterId}/`
-      : `${DOMAIN}/${chapter.sourceManga.mangaId}/`;
+    const url =
+      chapter.chapterId !== "null"
+        ? `${DOMAIN}/${chapter.sourceManga.mangaId}/${chapter.chapterId}/`
+        : `${DOMAIN}/${chapter.sourceManga.mangaId}/`;
 
     const [, buffer] = await Application.scheduleRequest({
       url,

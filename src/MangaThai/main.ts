@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
 import {
-  URL,
+  DiscoverSectionType,
   type Chapter,
   type ChapterDetails,
   type DiscoverSection,
@@ -10,9 +10,7 @@ import {
   type PagedResults,
   type SearchQuery,
   type SearchResultItem,
-  type SortingOption,
   type SourceManga,
-  DiscoverSectionType,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 
@@ -81,7 +79,7 @@ export class MangaThaiExtension implements ExtensionImpl<typeof MangaThaiConfig>
     });
 
     const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-    
+
     // In old code, getHomePageSections uses parseHomeSections for latest,
     // and getViewMoreItems uses parseViewMore.
     // For pagination/DiscoverSectionItems we can just use parseHomeSections for simple carousels.
@@ -94,12 +92,7 @@ export class MangaThaiExtension implements ExtensionImpl<typeof MangaThaiConfig>
     };
   }
 
-  async getSearchResults(
-    query: SearchQuery<any>,
-    metadata: { page?: number } | undefined,
-    sortingOption: SortingOption | undefined,
-  ): Promise<PagedResults<SearchResultItem>> {
-    // The old code search does not paginate.
+  async getSearchResults(query: SearchQuery<any>): Promise<PagedResults<SearchResultItem>> {
     const url = `${DOMAIN}/?s=${encodeURIComponent(query.title ?? "")}`;
 
     const [, buffer] = await Application.scheduleRequest({
@@ -132,7 +125,7 @@ export class MangaThaiExtension implements ExtensionImpl<typeof MangaThaiConfig>
     };
   }
 
-  async getChapters(sourceManga: SourceManga, sinceDate?: Date): Promise<Chapter[]> {
+  async getChapters(sourceManga: SourceManga, _sinceDate?: Date): Promise<Chapter[]> {
     const [, buffer] = await Application.scheduleRequest({
       url: `${DOMAIN}/${sourceManga.mangaId}/`,
       method: "GET",

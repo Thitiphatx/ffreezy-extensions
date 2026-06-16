@@ -1,4 +1,3 @@
-import type { CheerioAPI } from "cheerio";
 import {
   type Chapter,
   type ChapterDetails,
@@ -8,20 +7,32 @@ import {
   type Tag,
 } from "@paperback/types";
 import { ContentRating } from "@paperback/types";
+import type { CheerioAPI } from "cheerio";
 import * as entities from "entities";
 
 export class MikudoujinParser {
   parseMangaDetails($: CheerioAPI, mangaId: string): SourceManga {
-    const title = entities.decodeHTML($("div.container > div.row > div.col-12.col-md-9 div.card > div.card-header > b").first().text().trim());
-    const row = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row");
-    
-    const image = $("div.col-12.col-md-4 > img", row).attr("src") ?? "https://i.imgur.com/GYUxEX8.png";
+    const title = entities.decodeHTML(
+      $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-header > b")
+        .first()
+        .text()
+        .trim(),
+    );
+    const row = $(
+      "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row",
+    );
+
+    const image =
+      $("div.col-12.col-md-4 > img", row).attr("src") ?? "https://i.imgur.com/GYUxEX8.png";
     const story = $("div.col-12.col-md-8 > p:nth-child(3) > small > a", row).text().trim() ?? "";
     const author = $("div.col-12.col-md-8 > p:nth-child(4) > small > a", row).text().trim() ?? "";
     const description = $("div.col-12.col-md-8", row).contents().first().text().trim() ?? "";
 
     const arrayTags: Tag[] = [];
-    for (const tag of $("div.tags", "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row > div.col-12.col-md-8 > small:nth-child(12)").toArray()) {
+    for (const tag of $(
+      "div.tags",
+      "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row > div.col-12.col-md-8 > small:nth-child(12)",
+    ).toArray()) {
       const label = $("a.badge.badge-secondary.badge-up", tag).text().trim();
       if (!label) continue;
       arrayTags.push({ id: label, title: label });
@@ -52,14 +63,21 @@ export class MikudoujinParser {
     const chapters: Chapter[] = [];
     let i = 0;
 
-    const tableRows = $("tr", "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.no-padding > table.table.table-hover.table-episode > tbody");
+    const tableRows = $(
+      "tr",
+      "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.no-padding > table.table.table-hover.table-episode > tbody",
+    );
 
     if (tableRows.length !== 0) {
       for (const chapter of tableRows.toArray()) {
         i++;
         const title = $("td > a", chapter).text().trim() ?? "";
         const chapterId = $("td > a", chapter).attr("href")?.split("/")[4] ?? "";
-        const timeStr = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.sr-post-header > small").text().trim();
+        const timeStr = $(
+          "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.sr-post-header > small",
+        )
+          .text()
+          .trim();
         const date = this.parseDate(timeStr);
 
         if (!chapterId || !title) continue;
@@ -68,7 +86,16 @@ export class MikudoujinParser {
 
         chapters.push({
           chapterId,
-          sourceManga: { mangaId, mangaInfo: { primaryTitle: "", secondaryTitles: [], synopsis: "", contentRating: ContentRating.MATURE, thumbnailUrl: "" } },
+          sourceManga: {
+            mangaId,
+            mangaInfo: {
+              primaryTitle: "",
+              secondaryTitles: [],
+              synopsis: "",
+              contentRating: ContentRating.MATURE,
+              thumbnailUrl: "",
+            },
+          },
           title: entities.decodeHTML(title),
           langCode: "th",
           chapNum: isNaN(chapNum) ? i : chapNum,
@@ -77,12 +104,31 @@ export class MikudoujinParser {
         i--;
       }
     } else {
-      const title = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-header > b").first().text().trim();
-      const dateStr = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.sr-post-header > small").first().text().trim();
+      const title = $(
+        "div.container > div.row > div.col-12.col-md-9 div.card > div.card-header > b",
+      )
+        .first()
+        .text()
+        .trim();
+      const dateStr = $(
+        "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.sr-post-header > small",
+      )
+        .first()
+        .text()
+        .trim();
       const time = this.parseDate(dateStr);
       chapters.push({
         chapterId: "null",
-        sourceManga: { mangaId, mangaInfo: { primaryTitle: "", secondaryTitles: [], synopsis: "", contentRating: ContentRating.MATURE, thumbnailUrl: "" } },
+        sourceManga: {
+          mangaId,
+          mangaInfo: {
+            primaryTitle: "",
+            secondaryTitles: [],
+            synopsis: "",
+            contentRating: ContentRating.MATURE,
+            thumbnailUrl: "",
+          },
+        },
         title: entities.decodeHTML(title),
         langCode: "th",
         chapNum: 1,
@@ -112,12 +158,24 @@ export class MikudoujinParser {
   parseHomeSections($: CheerioAPI): DiscoverSectionItem[] {
     const items: DiscoverSectionItem[] = [];
 
-    for (const item of $("div.col-6.col-sm-4.col-md-3.mb-3.inz-col", "div.container > div.row > div.col-sm-12.col-md-9 > div.card > div.card-body > div.row").toArray()) {
-      const image = $("a.no-underline.inz-a > img.inz-img-thumbnail", item).first().attr("src") ?? "";
-      const title = $("a.no-underline.inz-a > div.inz-thumbnail-title-box > div.inz-title", item).first().text().trim() ?? "";
+    for (const item of $(
+      "div.col-6.col-sm-4.col-md-3.mb-3.inz-col",
+      "div.container > div.row > div.col-sm-12.col-md-9 > div.card > div.card-body > div.row",
+    ).toArray()) {
+      const image =
+        $("a.no-underline.inz-a > img.inz-img-thumbnail", item).first().attr("src") ?? "";
+      const title =
+        $("a.no-underline.inz-a > div.inz-thumbnail-title-box > div.inz-title", item)
+          .first()
+          .text()
+          .trim() ?? "";
       const id = $("a.no-underline.inz-a", item).attr("href")?.split("/")[3] ?? "";
-      const subtitle = $("a.no-underline.inz-a > div.row.inz-detail > div.col-6.text-left > small", item).first().text().trim() ?? "";
-      
+      const subtitle =
+        $("a.no-underline.inz-a > div.row.inz-detail > div.col-6.text-left > small", item)
+          .first()
+          .text()
+          .trim() ?? "";
+
       if (!id || !title) continue;
 
       items.push({
@@ -135,13 +193,17 @@ export class MikudoujinParser {
   parseRandomManga($: CheerioAPI): DiscoverSectionItem[] {
     const items: DiscoverSectionItem[] = [];
 
-    for (const item of $("div.col-6.col-sm-4.col-md-3.mb-3.inz-col", "div.container > div.row > div.col-12.col-md-9 > div.card > div.card-body > div.row").toArray()) {
+    for (const item of $(
+      "div.col-6.col-sm-4.col-md-3.mb-3.inz-col",
+      "div.container > div.row > div.col-12.col-md-9 > div.card > div.card-body > div.row",
+    ).toArray()) {
       const image = $("a > img", item).first().attr("src") ?? "";
-      const title = $("a > div.inz-thumbnail-title-box > div.inz-title", item).first().text().trim() ?? "";
+      const title =
+        $("a > div.inz-thumbnail-title-box > div.inz-title", item).first().text().trim() ?? "";
       const id = $("a", item).attr("href")?.split("/")[3] ?? "";
-      
+
       if (!id || !title) continue;
-      
+
       items.push({
         type: "simpleCarouselItem",
         mangaId: id,
@@ -149,7 +211,7 @@ export class MikudoujinParser {
         imageUrl: image || "https://i.imgur.com/GYUxEX8.png",
       });
     }
-    
+
     return items;
   }
 
@@ -157,12 +219,24 @@ export class MikudoujinParser {
     const comics: SearchResultItem[] = [];
     const collectedIds: string[] = [];
 
-    for (const item of $("div.col-6.col-sm-4.col-md-3.mb-3.inz-col", "div.container > div.row > div.col-sm-12.col-md-9 > div.card > div.card-body > div.row").toArray()) {
-      const image = $("a.no-underline.inz-a > img.inz-img-thumbnail", item).first().attr("src") ?? "";
-      const title = $("a.no-underline.inz-a > div.inz-thumbnail-title-box > div.inz-title", item).first().text().trim() ?? "";
+    for (const item of $(
+      "div.col-6.col-sm-4.col-md-3.mb-3.inz-col",
+      "div.container > div.row > div.col-sm-12.col-md-9 > div.card > div.card-body > div.row",
+    ).toArray()) {
+      const image =
+        $("a.no-underline.inz-a > img.inz-img-thumbnail", item).first().attr("src") ?? "";
+      const title =
+        $("a.no-underline.inz-a > div.inz-thumbnail-title-box > div.inz-title", item)
+          .first()
+          .text()
+          .trim() ?? "";
       const id = $("a.no-underline.inz-a", item).attr("href")?.split("/")[3] ?? "";
-      const subtitle = $("a.no-underline.inz-a > div.row.inz-detail > div.col-6.text-left > small", item).first().text().trim() ?? "";
-      
+      const subtitle =
+        $("a.no-underline.inz-a > div.row.inz-detail > div.col-6.text-left > small", item)
+          .first()
+          .text()
+          .trim() ?? "";
+
       if (!id || !title) continue;
       if (collectedIds.includes(id)) continue;
 
@@ -179,9 +253,20 @@ export class MikudoujinParser {
 
   parseSearch($: CheerioAPI, mangaId: string): SearchResultItem[] {
     const mangaItems: SearchResultItem[] = [];
-    const image = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row > div.col-12.col-md-4 > img").attr("src") ?? "https://i.imgur.com/GYUxEX8.png";
-    const title = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-header > b").first().text().trim();
-    const subtitle = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row > div.col-12.col-md-8 > p:nth-child(4) > small > a").text().trim() ?? "";
+    const image =
+      $(
+        "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row > div.col-12.col-md-4 > img",
+      ).attr("src") ?? "https://i.imgur.com/GYUxEX8.png";
+    const title = $("div.container > div.row > div.col-12.col-md-9 div.card > div.card-header > b")
+      .first()
+      .text()
+      .trim();
+    const subtitle =
+      $(
+        "div.container > div.row > div.col-12.col-md-9 div.card > div.card-body.sr-card-body > div.row > div.col-12.col-md-8 > p:nth-child(4) > small > a",
+      )
+        .text()
+        .trim() ?? "";
 
     if (title) {
       mangaItems.push({
@@ -201,13 +286,18 @@ export class MikudoujinParser {
   isLastPage($: CheerioAPI): boolean {
     let isLast = false;
     const pages: number[] = [];
-    for (const page of $("option", "div.container > div.row > div.col-sm-12.col-md-9 > div.row.mb-3 > div.col-md-8.col-4 > select").toArray()) {
+    for (const page of $(
+      "option",
+      "div.container > div.row > div.col-sm-12.col-md-9 > div.row.mb-3 > div.col-md-8.col-4 > select",
+    ).toArray()) {
       const p = Number($(page).text().trim());
       if (isNaN(p)) continue;
       pages.push(p);
     }
     const lastPage = Math.max(...pages, 1);
-    const currentPageStr = $("div.container > div.row > div.col-sm-12.col-md-9 > div.row.mb-3 > div.col-md-8.col-4 > select").val();
+    const currentPageStr = $(
+      "div.container > div.row > div.col-sm-12.col-md-9 > div.row.mb-3 > div.col-md-8.col-4 > select",
+    ).val();
     const currentPage = Number(currentPageStr);
     if (currentPage >= lastPage) isLast = true;
     return isLast;

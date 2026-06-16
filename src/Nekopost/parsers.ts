@@ -71,7 +71,16 @@ export class NekopostParser {
 
       chapters.push({
         chapterId,
-        sourceManga: { mangaId, mangaInfo: { primaryTitle: "", secondaryTitles: [], synopsis: "", contentRating: ContentRating.MATURE, thumbnailUrl: "" } },
+        sourceManga: {
+          mangaId,
+          mangaInfo: {
+            primaryTitle: "",
+            secondaryTitles: [],
+            synopsis: "",
+            contentRating: ContentRating.MATURE,
+            thumbnailUrl: "",
+          },
+        },
         title: entities.decodeHTML(title),
         langCode: "th",
         chapNum: isNaN(chapNum) ? i : chapNum,
@@ -153,7 +162,7 @@ export class NekopostParser {
   parseSearch(data: SearchData): SearchResultItem[] {
     const mangaItems: SearchResultItem[] = [];
     const collectedIds: string[] = [];
-    
+
     if (data.listProject != null) {
       for (const manga of data.listProject) {
         const id = manga.projectId ?? "";
