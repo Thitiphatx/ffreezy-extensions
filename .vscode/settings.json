@@ -1,5 +1,8 @@
 {
   "[markdown][yaml][json][typescript][javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   }
 }

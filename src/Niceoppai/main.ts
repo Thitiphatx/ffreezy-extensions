@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2026 Inkdex */
 
 import {
+  BasicRateLimiter,
   DiscoverSectionType,
   type Chapter,
   type ChapterDetails,
@@ -10,121 +12,170 @@ import {
   type PagedResults,
   type SearchQuery,
   type SearchResultItem,
-  type SortingOption,
   type SourceManga,
+  type TagSection,
 } from "@paperback/types";
 import * as cheerio from "cheerio";
 
-import { NiceoppaiParser } from "./parsers";
-import type NiceoppaiConfig from "./pbconfig";
+import { NiceoppaiInterceptor } from "./interceptors";
+import { NICEOPPAI_TAGS, type NiceoppaiSearchMetadata } from "./models";
+import {
+  fetchChapterDetailsPage,
+  fetchHomepage,
+  fetchMangaDetailsPage,
+  fetchRecent,
+  fetchSearchPage,
+} from "./networks";
+import {
+  parseChapterDetails,
+  parseChapterPage,
+  parseChapters,
+  parseMangaDetails,
+  parseRecentSection,
+  parseSearch,
+  parseTrendingSection,
+} from "./parsers";
+import type MangapillConfig from "./pbconfig";
 
-const DOMAIN = "https://www.niceoppai.net";
-const USER_AGENT =
-  "Mozilla / 5.0 (compatible; MSIE 7.0; Windows; U; Windows NT 6.0; Win64; x64 Trident / 4.0)";
+export class NiceoppaiExtension implements ExtensionImpl<typeof MangapillConfig> {
+  globalRateLimiter = new BasicRateLimiter("ratelimiter", {
+    numberOfRequests: 10,
+    bufferInterval: 0.5,
+    ignoreImages: true,
+  });
 
-export class NiceoppaiExtension implements ExtensionImpl<typeof NiceoppaiConfig> {
-  parser = new NiceoppaiParser();
+  requestManager = new NiceoppaiInterceptor("main");
 
-  async initialise(): Promise<void> {}
+  async initialise(): Promise<void> {
+    this.globalRateLimiter.registerInterceptor();
+    this.requestManager.registerInterceptor();
+    if (Application.isResourceLimited) return;
+  }
 
   async getDiscoverSections(): Promise<DiscoverSection[]> {
     return [
       {
-        id: "latest_comic",
-        title: "Latest Manga",
-        type: DiscoverSectionType.simpleCarousel,
+        id: "popular",
+        title: "Popular Mangas",
+        type: DiscoverSectionType.featured,
       },
+
+      {
+        id: "recent",
+        title: "Recently Updated",
+        type: DiscoverSectionType.chapterUpdates,
+      },
+
+      { id: "genre", title: "Genres", type: DiscoverSectionType.genres },
     ];
   }
 
   async getDiscoverSectionItems(
     section: DiscoverSection,
-    metadata: { page?: number } | undefined,
+    metadata: undefined,
   ): Promise<PagedResults<DiscoverSectionItem>> {
-    const page = metadata?.page ?? 1;
+    let items: DiscoverSectionItem[] = [];
 
-    if (section.id === "latest_comic") {
-      const [, buffer] = await Application.scheduleRequest({
-        url: `${DOMAIN}/latest-chapters/${page}`,
-        method: "GET",
-        headers: { "user-agent": USER_AGENT },
-      });
-      const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-      const items = this.parser.parseHomeSections($);
-      const isLast = this.parser.isLastPage($);
-
-      return {
-        items,
-        metadata: isLast ? undefined : { page: page + 1 },
-      };
+    switch (section.id) {
+      case "popular": {
+        const [_, buffer] = await fetchHomepage();
+        const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+        items = await parseTrendingSection($);
+        break;
+      }
+      case "recent": {
+        const [_, buffer] = await fetchRecent();
+        const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+        items = await parseRecentSection($);
+        break;
+      }
+      case "genre": {
+        items = NICEOPPAI_TAGS[0].tags.map((genre) => ({
+          type: "genresCarouselItem",
+          searchQuery: {
+            title: "",
+            metadata: {
+              genres: [genre.id],
+            },
+          },
+          name: genre.title,
+          metadata: metadata,
+        }));
+      }
     }
+    return { items, metadata };
+  }
 
-    return { items: [] };
+  async getMangaDetails(mangaId: string): Promise<SourceManga> {
+    const [_, buffer] = await fetchMangaDetailsPage(mangaId);
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    return await parseMangaDetails($, mangaId);
+  }
+
+  async getChapters(sourceManga: SourceManga): Promise<Chapter[]> {
+    const [_, buffer] = await fetchMangaDetailsPage(sourceManga.mangaId);
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    const lastChapterPage = await parseChapterPage($);
+    let allChapters: Chapter[] = [];
+    if (lastChapterPage) {
+      let page = 1;
+      while (page <= Number(lastChapterPage)) {
+        const [_, buffer] = await fetchMangaDetailsPage(sourceManga.mangaId, page.toString());
+        const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+        allChapters = allChapters.concat(parseChapters($, sourceManga));
+        page++;
+      }
+    } else {
+      allChapters = parseChapters($, sourceManga);
+    }
+    return allChapters;
+  }
+
+  async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
+    const [_, buffer] = await fetchChapterDetailsPage(
+      chapter.sourceManga.mangaId,
+      chapter.chapterId,
+    );
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
+    return parseChapterDetails($, chapter.sourceManga.mangaId, chapter.chapterId);
+  }
+
+  async supportsTagExclusion(): Promise<boolean> {
+    return false;
+  }
+
+  async getSearchTags(): Promise<TagSection[]> {
+    return NICEOPPAI_TAGS;
   }
 
   async getSearchResults(
     query: SearchQuery<any>,
-    _metadata: { page?: number } | undefined,
-    _sortingOption: SortingOption | undefined,
+    metadata: NiceoppaiSearchMetadata | undefined,
   ): Promise<PagedResults<SearchResultItem>> {
-    let param = "";
+    const page = metadata?.page ?? 1;
+    const paths = [];
+
     if (query.title) {
-      param = `search/${encodeURIComponent(query.title)}`;
+      paths.push(query.title);
+    } else if (query.metadata?.genres?.length) {
+      paths.push(query.metadata.genres[0]);
     } else {
-      // In old code: category/${query?.includedTags[0]}
-      param = "search/";
+      paths.push("");
     }
 
-    const [, buffer] = await Application.scheduleRequest({
-      url: `${DOMAIN}/manga_list/${param}`,
-      method: "GET",
-      headers: { "user-agent": USER_AGENT },
-    });
+    paths.push(page.toString());
 
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-    const items = this.parser.parseSearch($);
+    const response = await fetchSearchPage(paths, []);
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(response[1]));
 
-    return {
-      items,
-    };
-  }
+    const items = await parseSearch($);
 
-  async getMangaDetails(mangaId: string): Promise<SourceManga> {
-    const [, buffer] = await Application.scheduleRequest({
-      url: `${DOMAIN}/${mangaId}`,
-      method: "GET",
-      headers: { "user-agent": USER_AGENT },
-    });
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-    const manga = this.parser.parseMangaDetails($, mangaId);
+    let mData: NiceoppaiSearchMetadata | undefined = undefined;
+    if (items.length > 0) {
+      mData = { page: page + 1 };
+    }
 
-    return {
-      ...manga,
-      mangaInfo: {
-        ...manga.mangaInfo,
-        shareUrl: `${DOMAIN}/${mangaId}`,
-      },
-    };
-  }
-
-  async getChapters(sourceManga: SourceManga, _sinceDate?: Date): Promise<Chapter[]> {
-    const [, buffer] = await Application.scheduleRequest({
-      url: `${DOMAIN}/${sourceManga.mangaId}`,
-      method: "GET",
-      headers: { "user-agent": USER_AGENT },
-    });
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-    return this.parser.parseChapters($, sourceManga.mangaId);
-  }
-
-  async getChapterDetails(chapter: Chapter): Promise<ChapterDetails> {
-    const [, buffer] = await Application.scheduleRequest({
-      url: `${DOMAIN}/${chapter.sourceManga.mangaId}/${chapter.chapterId}`,
-      method: "GET",
-      headers: { "user-agent": USER_AGENT },
-    });
-    const $ = cheerio.load(Application.arrayBufferToUTF8String(buffer));
-    return this.parser.parseChapterDetails($, chapter.sourceManga.mangaId, chapter.chapterId);
+    return { items, metadata: mData };
   }
 }
 
