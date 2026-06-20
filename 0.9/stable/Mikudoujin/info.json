@@ -1,1 +1,0 @@
-{"name":"Mikudoujin","description":"Extension that pulls comics from miku-doujin.com.","version":"1.0.6-alpha.1","icon":"icon.png","language":"th","contentRating":"MATURE","capabilities":[1,4,64],"badges":[{"label":"18+","textColor":"#FFFFFF","backgroundColor":"#FF0000"}],"developers":[{"name":"Thitiphatx","github":"https://github.com/Thitiphatx"}],"id":"Mikudoujin"}

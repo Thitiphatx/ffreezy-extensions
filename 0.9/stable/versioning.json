@@ -1,129 +1,27 @@
 {
-  "buildTime": "2026-06-16T14:44:49.323Z",
+  "buildTime": "2026-06-20T13:16:47.084Z",
   "builtWith": {
     "toolchain": "1.0.0-alpha.92",
     "types": "1.0.0-alpha.92"
   },
   "repository": {
-    "name": "General Extensions (0.9)",
-    "description": "Paperback extensions for websites with unique, non-generic themes. Maintained by Inkdex."
+    "name": "Ffreezy Extensions (0.9)",
+    "description": "Ffreezy custom extensions for paperback 0.9"
   },
   "sources": [
     {
-      "name": "Manga168",
-      "description": "Extension that pulls comics from manga168.com",
-      "version": "1.0.0-alpha.1",
-      "icon": "icon.png",
-      "language": "th",
-      "contentRating": "SAFE",
-      "capabilities": [
-        1,
-        4,
-        64
-      ],
-      "badges": [],
-      "developers": [
-        {
-          "name": "Thitiphatx",
-          "github": "https://github.com/Thitiphatx"
-        }
-      ],
-      "id": "Manga168"
-    },
-    {
-      "name": "MangaThai",
-      "description": "Extension that pulls comics from mangathai.com",
-      "version": "1.0.0-alpha.1",
-      "icon": "icon.png",
-      "language": "th",
-      "contentRating": "MATURE",
-      "capabilities": [
-        1,
-        4,
-        64
-      ],
-      "badges": [],
-      "developers": [
-        {
-          "name": "Thitiphatx",
-          "github": "https://github.com/Thitiphatx"
-        }
-      ],
-      "id": "MangaThai"
-    },
-    {
-      "name": "Mikudoujin",
-      "description": "Extension that pulls comics from miku-doujin.com.",
-      "version": "1.0.6-alpha.1",
-      "icon": "icon.png",
-      "language": "th",
-      "contentRating": "MATURE",
-      "capabilities": [
-        1,
-        4,
-        64
-      ],
-      "badges": [
-        {
-          "label": "18+",
-          "textColor": "#FFFFFF",
-          "backgroundColor": "#FF0000"
-        }
-      ],
-      "developers": [
-        {
-          "name": "Thitiphatx",
-          "github": "https://github.com/Thitiphatx"
-        }
-      ],
-      "id": "Mikudoujin"
-    },
-    {
-      "name": "Nekopost",
-      "description": "Extension that pulls comics from Nekopost.net",
-      "version": "1.0.6-alpha.1",
-      "icon": "icon.png",
-      "language": "th",
-      "contentRating": "MATURE",
-      "capabilities": [
-        1,
-        4,
-        64
-      ],
-      "badges": [
-        {
-          "label": "Recommend",
-          "textColor": "#FFFFFF",
-          "backgroundColor": "#00FF00"
-        }
-      ],
-      "developers": [
-        {
-          "name": "Thitiphatx",
-          "github": "https://github.com/Thitiphatx"
-        }
-      ],
-      "id": "Nekopost"
-    },
-    {
       "name": "Niceoppai",
-      "description": "Extension that pulls comics from Niceoppai.net.",
-      "version": "1.1.0-alpha.1",
+      "description": "Extension that pulls content from Niceoppai.net.",
+      "version": "1.0.0-alpha.1",
       "icon": "icon.png",
       "language": "th",
       "contentRating": "MATURE",
       "capabilities": [
-        1,
         4,
-        64
+        64,
+        1
       ],
-      "badges": [
-        {
-          "label": "Recommend",
-          "textColor": "#FFFFFF",
-          "backgroundColor": "#00FF00"
-        }
-      ],
+      "badges": [],
       "developers": [
         {
           "name": "Thitiphatx",
